@@ -73,7 +73,7 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="#" class="btn btn-success" data-toggle="modal" data-target="#addModal">新增分类</a>
+                            <a href="#" class="btn btn-success" id="btn-addType">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
@@ -90,13 +90,14 @@
                 </div>
                 <div class="modal-body">
                     <form>
+                        <input type="hidden" id="poId" name="id">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">分类名称:</label>
-                            <input type="text" class="form-control" id="list-name">
+                            <input type="text" class="form-control" id="list-name" name="name">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">分类别名:</label>
-                            <input type="text" class="form-control" id="list-slug">
+                            <input type="text" class="form-control" id="list-slug" name="slug">
                         </div>
                     </form>
                 </div>
@@ -124,12 +125,12 @@
         //     $('#addModal').modal('hide');
         // });
 
-        $('.category_table').delegate('a', 'click', function () {
-            if ($(this).hasClass('btn-info')) {
-                $('#addModal .modal-title').html('修改分类名称');
-                $('#addModal').modal('show');
-            }
-        })      
+        // $('.category_table').delegate('a', 'click', function () {
+        //     if ($(this).hasClass('btn-info')) {
+        //         $('#addModal .modal-title').html('修改分类名称');
+        //         $('#addModal').modal('show');
+        //     }
+        // })      
     </script>
 
 
@@ -140,7 +141,7 @@
             <td>{{v.name}}</td>
             <td>{{v.slug}}</td>
             <td class="text-center">
-                <a href="javascript:editTr({&quot;id&quot;:&quot;1&quot;,&quot;slug&quot;:&quot;uncategorized&quot;,&quot;name&quot;:&quot;未分类&quot;});" class="btn btn-info btn-xs">编辑</a>
+                <a href="#" class="btn btn-info btn-xs" list_id = "{{v.id}}">编辑</a>
                 <a href="#" class="btn btn-danger btn-xs btn-delete" list_id = "{{v.id}}">删除</a>
             </td>
         </tr>
@@ -167,50 +168,84 @@
             };
             getList();
 
+
+            //给编辑按钮设置点击事件
+            $('tbody').on('click', 'a.btn-info', function () {
+                $('#addModal .modal-title').html('修改分类名称');
+                $('#addModal').modal('show');
+                $('#model_add').text('修改').removeClass('btn-success');
+                $('#list-name').val($(this).parent().prev().prev().text());
+                $('#list-slug').val($(this).parent().prev().text());
+                $('#poId').val($(this).attr('list_id'));
+            });
+
+            //给新增分类按钮注册点击事件
+            $('#btn-addType').on('click', function () {
+                $('#addModal .modal-title').html('新增分类');
+                $('#addModal').modal('show');
+                $('#model_add').text('新增').addClass('btn-success');
+            });
+
+
             //给新增按钮注册点击事件
             $('#model_add').on('click', function () {
-                var listname = $('#list-name').val().trim();
-                var listslug = $('#list-slug').val().trim();
-                //发送ajax请求,新增文章
-                $.ajax({
-                    url: 'http://localhost:8080/admin/category/add',
-                    type: 'post',
-                    // dataType:'json',
-                    data: {
-                        name: listname,
-                        slug: listslug,
-                    },
-                    success: function (backData) {
-                        // console.log(backData);
-                        if (backData.code == 201) {
-                            alert('新增成功')
-                            getList();
-                            $('#list-name').val("");
-                            $('#list-slug').val("");
-                            $('#addModal').modal('hide');
+                if ($(this).text() == '新增') {
+                    var listname = $('#list-name').val().trim();
+                    var listslug = $('#list-slug').val().trim();
+                    //发送ajax请求,新增文章
+                    $.ajax({
+                        url: 'http://localhost:8080/admin/category/add',
+                        type: 'post',
+                        // dataType:'json',
+                        data: {
+                            name: listname,
+                            slug: listslug,
+                        },
+                        success: function (backData) {
+                            // console.log(backData);
+                            if (backData.code == 201) {
+                                alert('新增成功')
+                                getList();
+                                $('#list-name').val("");
+                                $('#list-slug').val("");
+                                $('#addModal').modal('hide');
+                            }
                         }
-                    }
-                });
-                
+                    });
+                } else {
+                    var fd = $('form').serialize();
+                    $.ajax({
+                        url:'http://localhost:8080/admin/category/edit',
+                        type:'post',
+                        // dataType:'json',
+                        data:fd,
+                        success: function(backData){
+                            console.log(backData);
+                            $('#addModal').modal('hide');
+                            getList();
+                        }
+                    });
+                }
+
             });
 
 
             //给删除按钮注册委托事件
-            $('tbody').on('click','a.btn-delete',function(e){
+            $('tbody').on('click', 'a.btn-delete', function (e) {
                 e.preventDefault();
                 var id = $(this).attr('list_id');
                 console.log(id);
-                
+
                 // id = Number(id); 
                 //发送ajax请求
                 $.ajax({
-                    url:'http://localhost:8080/admin/category/delete',
-                    type:'post',
+                    url: 'http://localhost:8080/admin/category/delete',
+                    type: 'post',
                     // dataType:'json',
-                    data:{
-                        id:id
+                    data: {
+                        id: id
                     },
-                    success: function(backData){
+                    success: function (backData) {
                         console.log(backData);
                         getList();
                     }
