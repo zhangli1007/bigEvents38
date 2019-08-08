@@ -15,6 +15,10 @@
     <script src="js/jedate/js/jedate.js"></script>
     <script src="js/tinymce/js/tinymce/tinymce.min.js"></script>
     <script src="js/tinymce/js/tinymce_setup.js"></script>
+    <!-- 导入模板引擎文件 -->
+    <script src="./js/template-web.js"></script>
+    <!-- 导入时间格式化文件 -->
+    <script src="./js/moment.js"></script>
 </head>
 
 <body>
@@ -27,19 +31,20 @@
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章标题：</label>
                     <div class="col-sm-10">
-                        <input type="email" class="form-control" id="inputEmail3" placeholder="文章标题">
+                        <input type="email" class="form-control" name="title" id="inputEmail3" placeholder="文章标题">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">文章封面：</label>
                     <div class="col-sm-10">
-                        <input type="file" id="exampleInputFile">
+                        <input type="file" name="cover" id="exampleInputFile">
+                        <img src="" alt="" style="width:100px;height:100px">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">文章类别：</label>
                     <div class="col-sm-4">
-                        <select class="form-control">
+                        <select class="form-control sel-list" name="categoryId">
                             <option>1</option>
                             <option>2</option>
                             <option>3</option>
@@ -53,7 +58,7 @@
                     <div class="col-sm-4">
 
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="YYYY-MM-DD" id="dateinput">
+                            <input type="text" class="form-control" placeholder="YYYY-MM-DD" name="date" id="dateinput">
                             <span class="input-group-btn">
                                 <button class="btn btn-default" type="button"
                                     onclick="jeDate('#dateinput',{trigger:false,format: 'YYYY-MM-DD'})"><i
@@ -66,20 +71,77 @@
                     <label for="inputEmail3" class="col-sm-2 control-label">文章内容：</label>
                     <div class="col-sm-10">
                         <textarea class="form-control" id="rich_content" name="content" placeholder="文章内容">
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Assumenda fugiat illo nihil molestias ab. Laborum eius non atque, totam sapiente quae obcaecati assumenda ratione inventore pariatur maiores, qui libero delectus.
-                            </textarea>
+
+                        </textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <button type="submit" class="btn btn-success">发布</button>
+                        <button type="submit" class="btn btn-success" id="fabu">发布</button>
                         <button type="submit" class="btn btn-default">存为草稿</button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+    <!-- 设置一个模板文件 -->
+    <script id='temp_op' type='text/html'>
+        {{each data v}}
+        <option value="{{v.id}}">{{v.name}}</option>
+        {{/each}}
+    </script>
+    <script>
+        $(function () {
 
+            // 给图片设置文件预览
+            // 给file按钮注册值改变事件(change事件)
+            $('#exampleInputFile').on('change', function (e) {
+                e.preventDefault();
+                // 通过input:file标签对象里的files属性获取文件
+                var file = this.files[0];
+                // 给文件创建一个url
+                var url = URL.createObjectURL(file);
+                // 把url设置给用于预览的img标签的src属性里
+                $(this).next().attr('src', url);
+            });
+
+
+            //发送ajax请求获取文章类别,并渲染到下拉菜单中
+            $.ajax({
+                url: 'http://localhost:8080/admin/category/list',
+                type: 'get',
+                dataType: 'json',
+                // data:{},
+                success: function (backData) {
+                    //调用模板
+                    var res = template('temp_op', backData);
+                    $('.sel-list').html(res);
+                }
+            });
+            $('#dateinput').val(moment().format('YYYY-MM-DD'));
+
+            $('#fabu').on('click', function (e) {
+                e.preventDefault();
+                // window.location.href = 'article_list.html';
+                var fd = new FormData($('form')[0]);
+                fd.append('content', tinyMCE.activeEditor.getContent());
+                fd.append('state', '已发布');
+                // console.log(content);
+                $.ajax({
+                    url: 'http://localhost:8080/admin/article/publish',
+                    type: 'post',
+                    data: fd,
+                    contentType: false,
+                    processData: false,
+                    success: function (backDAta) {
+                        console.log(backData);
+                        window.location.href = 'article_list.html';
+                    }
+                });
+            });
+
+        });
+    </script>
 </body>
 
 </html>
